@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Parceiros · Seja Livre Investimentos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070A; --bg-2:#080B10; --panel:#0B0F15; --panel-2:#0E141B;
+  --line:rgba(255,255,255,.06); --line-2:rgba(255,255,255,.10);
+  --txt:#E6EDF3; --txt-2:#9AA7B4; --txt-3:#5D6B78;
+  --green:#00E676; --green-dim:#0BA85B; --cyan:#22D3EE; --red:#FF5C6C;
+  --glow-green:rgba(0,230,118,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;min-height:100vh;position:relative;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(900px 500px at 88% -8%,rgba(0,230,118,.10),transparent 60%),radial-gradient(800px 600px at -6% 108%,rgba(34,211,238,.09),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:26px 22px 70px}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.brand-mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--green),var(--cyan));box-shadow:0 0 22px var(--glow-green);flex-shrink:0}
+.brand-name{font-family:'Sora';font-weight:700;font-size:15px;line-height:1.1}
+.brand-sub{font-size:11px;color:var(--txt-3);letter-spacing:.4px;text-transform:uppercase}
+.card{background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.calc{border:1px solid rgba(34,211,238,.18)}
+.wz{padding:30px 26px 34px}
+.wz-steps{display:flex;align-items:center;justify-content:center;margin-bottom:28px}
+.wz-dot{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-family:'Sora';font-weight:700;font-size:15px;color:var(--txt-3);background:var(--panel-2);border:1px solid var(--line-2);transition:.25s}
+.wz-dot.active{background:var(--green);color:#04150C;border-color:var(--green);box-shadow:0 0 18px var(--glow-green)}
+.wz-dot.done{background:rgba(0,230,118,.15);color:var(--green);border-color:rgba(0,230,118,.4)}
+.wz-conn{width:56px;height:2px;background:var(--line-2);margin:0 6px;transition:.25s}
+.wz-conn.done{background:var(--green)}
+.wz-head{text-align:center;margin-bottom:22px}
+.wz-title{font-family:'Sora';font-weight:700;font-size:19px}
+.wz-sub{font-size:13px;color:var(--txt-3);margin-top:6px}
+.wz-sub b{color:var(--green);font-weight:600}
+.wz-pane{display:none}
+.wz-pane.active{display:block;animation:fade .4s cubic-bezier(.16,1,.3,1)}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+
+/* IMPORT */
+.imp{border:1px dashed var(--line-2);border-radius:14px;padding:16px;margin-bottom:18px;background:rgba(34,211,238,.02)}
+.imp-h{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--cyan);margin-bottom:14px}
+.drops{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.drop{border:1px solid var(--line-2);border-radius:11px;padding:14px 12px;text-align:center;cursor:pointer;transition:.15s;background:rgba(255,255,255,.01)}
+.drop:hover{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.03)}
+.drop.loaded{border-color:rgba(0,230,118,.45);background:rgba(0,230,118,.05)}
+.drop .dt{font-family:'Sora';font-weight:600;font-size:13px}
+.drop .ds{font-size:10.5px;color:var(--txt-3);margin-top:4px;word-break:break-word}
+.drop.loaded .dt{color:var(--green)}
+.drop input{display:none}
+.imp-sel{margin-top:12px;display:none}
+.imp-sel.show{display:block}
+.select,.wz-input{width:100%;background:var(--panel);border:1px solid var(--line-2);border-radius:11px;color:var(--txt);font-family:'Sora';font-weight:600;font-size:14px;padding:12px 13px;transition:border-color .15s}
+.select{-webkit-appearance:none;appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%239AA7B4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
+.select:focus,.wz-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.08)}
+.imp-info{font-size:11.5px;color:var(--txt-3);margin-top:10px;text-align:center}
+.imp-info b{color:var(--green)}
+
+/* faixa rows */
+.as-row{display:grid;grid-template-columns:1fr 110px auto 34px;gap:10px;align-items:center;margin-bottom:10px}
+.wz-input{-moz-appearance:textfield}
+.wz-input::-webkit-outer-spin-button,.wz-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.wz-input::placeholder{color:var(--txt-3)}
+.as-pts{font-family:'Sora';font-weight:600;font-size:14px;color:var(--txt-2);white-space:nowrap;text-align:right}
+.as-pts b{color:var(--green);font-weight:700}
+.as-del{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;cursor:pointer;color:var(--txt-3);background:transparent;border:1px solid var(--line);transition:.15s}
+.as-del:hover{color:var(--red);border-color:rgba(255,92,108,.3)}
+.as-add{width:100%;padding:13px;border-radius:12px;cursor:pointer;margin-top:2px;border:1px dashed var(--line-2);background:transparent;color:var(--txt-2);font-family:'Inter';font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.as-add:hover{border-color:rgba(0,230,118,.4);color:var(--green)}
+.wz-total{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;margin-top:16px;border-radius:13px;background:linear-gradient(135deg,rgba(0,230,118,.08),rgba(0,230,118,.02));border:1px solid rgba(0,230,118,.2)}
+.wz-total .k{font-size:13px;color:var(--txt-2)}
+.wz-total .k span{font-family:'Sora';font-weight:700;color:var(--txt)}
+.wz-total .v{font-family:'Sora';font-weight:800;font-size:22px;color:var(--green);font-variant-numeric:tabular-nums}
+.wz-tp{margin-top:20px}
+.wz-tp-l{font-size:12px;color:var(--txt-3);margin-bottom:10px}
+.wz-tp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tp-cell{background:var(--bg-2);padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
+.tp-cell .tc{font-family:'Sora';font-size:12.5px;color:var(--txt);font-weight:500;font-variant-numeric:tabular-nums}
+.tp-cell .tm{font-family:'Sora';font-weight:700;font-size:13px;color:var(--green)}
+.wz-fields{display:flex;flex-direction:column;gap:16px}
+.wz-field label{display:block;font-size:11px;color:var(--txt-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.suffix{position:relative}
+.suffix span{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--txt-3);font-size:13px;pointer-events:none}
+.wz-res-wf{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:18px}
+.wz-res-row{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;background:var(--bg-2);font-size:14px}
+.wz-res-row .rk{color:var(--txt-2)}
+.wz-res-row .rv{font-family:'Sora';font-weight:600;font-variant-numeric:tabular-nums}
+.wz-res-row.neg .rv{color:var(--red)}
+.wz-res-row.faixa{background:rgba(34,211,238,.05)} .wz-res-row.faixa .rv{color:var(--cyan)}
+.wz-liq{padding:24px;border-radius:15px;text-align:center;background:linear-gradient(135deg,rgba(0,230,118,.12),rgba(34,211,238,.05));border:1px solid rgba(0,230,118,.24)}
+.wz-liq .lk{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--green);margin-bottom:10px}
+.wz-liq .lv{font-family:'Sora';font-weight:800;font-size:40px;color:var(--green);font-variant-numeric:tabular-nums;line-height:1}
+.wz-nav{display:flex;gap:12px;margin-top:22px}
+.btn{font-family:'Inter';font-weight:600;font-size:14px;padding:15px 20px;border-radius:12px;cursor:pointer;transition:.15s;border:1px solid var(--line-2)}
+.btn-primary{flex:1;background:var(--green);color:#04150C;border-color:var(--green);box-shadow:0 6px 20px rgba(0,230,118,.2)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{background:var(--panel);color:var(--txt-2)}
+.btn-ghost:hover{color:var(--txt);border-color:var(--line-2);background:var(--panel-2)}
+.footer{margin-top:26px;text-align:center;font-size:11.5px;color:var(--txt-3)}
+.footer b{color:var(--txt-2)}
+@media (max-width:560px){.drops,.wz-tp-grid{grid-template-columns:1fr}.as-row{grid-template-columns:1fr 90px 34px}.as-pts{grid-column:1/-1;text-align:left;order:4}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M3 13.5L9 19L21 5" stroke="#04150C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><div class="brand-name">Seja Livre Investimentos</div><div class="brand-sub">Calculadora de bonificação</div></div>
+  </div>
+
+  <div class="card calc">
+    <div class="wz">
+      <div class="wz-steps">
+        <div class="wz-dot active" data-step="1">1</div><div class="wz-conn" data-conn="1"></div>
+        <div class="wz-dot" data-step="2">2</div><div class="wz-conn" data-conn="2"></div>
+        <div class="wz-dot" data-step="3">3</div>
+      </div>
+
+      <!-- ETAPA 1 -->
+      <div class="wz-pane active" data-pane="1">
+        <div class="wz-head">
+          <div class="wz-title">Etapa 1 de 3</div>
+          <div class="wz-sub">Importe a planilha ou informe o <b>nº de clientes</b> por faixa</div>
+        </div>
+
+        <div class="imp">
+          <div class="imp-h"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Importar planilha de operação</div>
+          <div class="drops">
+            <label class="drop" id="dropFut"><div class="dt" id="futT">Futuros</div><div class="ds" id="futS">subir .xlsx</div><input type="file" id="fileFut" accept=".xlsx,.xls,.csv"></label>
+            <label class="drop" id="dropBov"><div class="dt" id="bovT">Bovespa</div><div class="ds" id="bovS">subir .xlsx</div><input type="file" id="fileBov" accept=".xlsx,.xls,.csv"></label>
+          </div>
+          <div class="imp-sel" id="impSel">
+            <select class="select" id="assSel"></select>
+            <div class="imp-info" id="impInfo"></div>
+          </div>
+        </div>
+
+        <div id="asList"></div>
+        <button class="as-add" id="asAdd"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Adicionar faixa</button>
+        <div class="wz-total"><span class="k"><span id="asTotal">0</span> clientes · bônus bruto:</span><span class="v" id="asTotalBonus">R$ 0</span></div>
+        <div class="wz-tp">
+          <div class="wz-tp-l">Tabela de bonificação (faixa → bônus):</div>
+          <div class="wz-tp-grid" id="tpGrid"></div>
+        </div>
+        <div class="wz-nav"><button class="btn btn-primary" data-go="2">Avançar</button></div>
+      </div>
+
+      <!-- ETAPA 2 -->
+      <div class="wz-pane" data-pane="2">
+        <div class="wz-head"><div class="wz-title">Etapa 2 de 3</div><div class="wz-sub">Informe os <b>custos</b> da operação</div></div>
+        <div class="wz-fields">
+          <div class="wz-field"><label>Custo por licença de plataforma</label><div class="suffix"><input class="wz-input" type="number" id="wzUnit" value="280" min="0"><span>R$</span></div></div>
+          <div class="wz-field"><label>Nº de licenças contratadas</label><input class="wz-input" type="number" id="wzQty" value="1" min="0"></div>
+          <div class="wz-field"><label>Imposto sobre o bônus</label><div class="suffix"><input class="wz-input" type="number" id="wzTax" value="19.57" min="0" step="0.01"><span>%</span></div></div>
+        </div>
+        <div class="wz-nav"><button class="btn btn-ghost" data-go="1">Voltar</button><button class="btn btn-primary" data-go="3">Avançar</button></div>
+      </div>
+
+      <!-- ETAPA 3 -->
+      <div class="wz-pane" data-pane="3">
+        <div class="wz-head"><div class="wz-title">Etapa 3 de 3</div><div class="wz-sub">Resultado da simulação</div></div>
+        <div class="wz-res-wf">
+          <div class="wz-res-row faixa"><span class="rk">Clientes no cenário</span><span class="rv" id="wzFaixa">—</span></div>
+          <div class="wz-res-row"><span class="rk">Bônus bruto</span><span class="rv" id="wzBruto">R$ 0</span></div>
+          <div class="wz-res-row neg"><span class="rk">− Plataforma</span><span class="rv" id="wzPlat">R$ 0</span></div>
+          <div class="wz-res-row neg"><span class="rk">− Imposto</span><span class="rv" id="wzImp">R$ 0</span></div>
+        </div>
+        <div class="wz-liq"><div class="lk">Bonificação líquida simulada</div><div class="lv" id="wzLiq">R$ 0</div></div>
+        <div class="wz-nav"><button class="btn btn-ghost" data-go="2">Voltar</button><button class="btn btn-ghost" id="wzReset">Recomeçar</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Calculadora demonstrativa · <b>Seja Livre Investimentos</b></div>
+</div>
+
+<script>
+/* tabela NOVA de bonificação */
+const BRACKETS = [
+  {min:500000, bonus:31500, label:'≥ 500.000'},
+  {min:300000, bonus:21000, label:'300.000 – 499.999'},
+  {min:150000, bonus:12000, label:'150.000 – 299.999'},
+  {min:100000, bonus:9000,  label:'100.000 – 149.999'},
+  {min:75000,  bonus:7125,  label:'75.000 – 99.999'},
+  {min:50000,  bonus:5000,  label:'50.000 – 74.999'},
+  {min:25000,  bonus:2500,  label:'25.000 – 49.999'},
+  {min:10000,  bonus:1000,  label:'10.000 – 24.999'},
+  {min:5000,   bonus:500,   label:'5.000 – 9.999'},
+  {min:1000,   bonus:200,   label:'1.000 – 4.999'},
+];
+const brIndexOf = pts => { for(let i=0;i<BRACKETS.length;i++) if(pts>=BRACKETS[i].min) return i; return -1; };
+const MULT = {WIN:1,WDO:2,WSP:1,SOL:3,IND:3,GLD:3,ETR:3,DOL:5,BIT:4,DI1:1};
+const multOf = a => { a=String(a).toUpperCase(); for(const k in MULT) if(a.startsWith(k)) return MULT[k]; return 0; };
+const money = n => 'R$ ' + Math.round(n).toLocaleString('pt-BR');
+const num = n => Math.round(n).toLocaleString('pt-BR');
+
+/* ---------- IMPORTAÇÃO ---------- */
+const store = { fut:null, bov:null };
+const norm = s => String(s==null?'':s).trim();
+const up = s => norm(s).toUpperCase();
+function colIndex(header, names){ const H=header.map(up); for(const n of names){ const i=H.indexOf(up(n)); if(i>=0) return i; } return -1; }
+function parseWorkbook(data){
+  const wb = XLSX.read(data,{type:'array'});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+  if(!rows.length) return null;
+  const header=rows[0];
+  const iCon=colIndex(header,['CONTRATOS']); const iVol=colIndex(header,['Volume']);
+  const isFut=iCon>=0;
+  const iAss=colIndex(header,['ASSESSOR','Assessor']);
+  const iAtv=colIndex(header,['ATIVO','Ativo']);
+  const iConta=colIndex(header,['CONTA SINACOR','Código','Codigo']);
+  if(iAss<0||iConta<0) return null;
+  const byAssessor={};
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r]; if(!row) continue;
+    const ass=norm(row[iAss]); if(!ass) continue;
+    const conta=norm(row[iConta]); if(!conta) continue;
+    if(!byAssessor[ass]) byAssessor[ass]={contas:{}};
+    const A=byAssessor[ass];
+    if(isFut) A.contas[conta]=(A.contas[conta]||0)+(Number(row[iCon])||0)*multOf(row[iAtv]);
+    else A.contas[conta]=(A.contas[conta]||0)+(Number(row[iVol])||0)/4000;
+  }
+  return {isFut,byAssessor};
+}
+function readFile(file, slot, tEl, sEl, dropEl){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const parsed=parseWorkbook(e.target.result);
+      if(!parsed){ sEl.textContent='formato não reconhecido'; return; }
+      store[slot]=parsed.byAssessor;
+      dropEl.classList.add('loaded');
+      tEl.textContent=parsed.isFut?'Futuros ✓':'Bovespa ✓';
+      sEl.textContent=file.name;
+      rebuildAssessores();
+    }catch(err){ sEl.textContent='erro ao ler'; console.error(err); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+document.getElementById('fileFut').addEventListener('change',e=>{ if(e.target.files[0]) readFile(e.target.files[0],'fut',futT,futS,dropFut); });
+document.getElementById('fileBov').addEventListener('change',e=>{ if(e.target.files[0]) readFile(e.target.files[0],'bov',bovT,bovS,dropBov); });
+
+function allAssessores(){
+  const set=new Set();
+  ['fut','bov'].forEach(s=>{ if(store[s]) Object.keys(store[s]).forEach(a=>{ if(a && a.toUpperCase()!=='NONE') set.add(a); }); });
+  return [...set].sort();
+}
+function rebuildAssessores(){
+  const list=allAssessores();
+  const sel=document.getElementById('assSel');
+  const box=document.getElementById('impSel');
+  if(!list.length){ box.classList.remove('show'); return; }
+  box.classList.add('show');
+  sel.innerHTML='<option value="">Selecione o parceiro…</option>'+list.map(a=>`<option value="${a.replace(/"/g,'&quot;')}">${a}</option>`).join('');
+}
+document.getElementById('assSel').addEventListener('change', ()=>{
+  const ass=document.getElementById('assSel').value;
+  const info=document.getElementById('impInfo');
+  if(!ass){ info.textContent=''; return; }
+  // pontos por conta somando os dois arquivos
+  const pts={};
+  ['fut','bov'].forEach(s=>{ const A=store[s]&&store[s][ass]; if(!A) return; for(const c in A.contas) pts[c]=(pts[c]||0)+A.contas[c]; });
+  // contagem por faixa
+  const counts=new Array(BRACKETS.length).fill(0); let clientes=0;
+  for(const c in pts){ const i=brIndexOf(pts[c]); if(i>=0) counts[i]++; clientes++; }
+  // preenche as faixas
+  asList.innerHTML='';
+  counts.forEach((c,i)=>{ if(c>0){ faixaRow(); const last=asList.lastElementChild;
+    last.querySelector('.as-sel').value=i; last.querySelector('.as-qty').value=c;
+    last.querySelector('.as-pts b').textContent=money(c*BRACKETS[i].bonus); } });
+  if(!asList.children.length) faixaRow();
+  const bonus=counts.reduce((s,c,i)=>s+c*BRACKETS[i].bonus,0);
+  info.innerHTML=`<b>${num(clientes)}</b> clientes classificados · bônus <b>${money(bonus)}</b> — faixas preenchidas abaixo`;
+  wzTotalBonus();
+});
+
+/* ---------- FAIXAS (igual ao dash) ---------- */
+const asList=document.getElementById('asList');
+function faixaRow(){
+  const row=document.createElement('div'); row.className='as-row';
+  row.innerHTML=`
+    <select class="as-sel select">${BRACKETS.map((b,i)=>`<option value="${i}">${b.label}</option>`).join('')}</select>
+    <input class="wz-input as-qty" type="number" min="0" placeholder="Nº clientes">
+    <div class="as-pts">= <b>R$ 0</b></div>
+    <button class="as-del" title="Remover"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>`;
+  const sel=row.querySelector('.as-sel'), qty=row.querySelector('.as-qty'), pts=row.querySelector('.as-pts b');
+  const upd=()=>{ pts.textContent=money((+qty.value||0)*BRACKETS[+sel.value].bonus); wzTotalBonus(); };
+  sel.addEventListener('change',upd); qty.addEventListener('input',upd);
+  row.querySelector('.as-del').addEventListener('click',()=>{ if(asList.children.length>1){ row.remove(); wzTotalBonus(); } });
+  asList.appendChild(row);
+}
+function wzScenario(){
+  let gross=0,clients=0;
+  asList.querySelectorAll('.as-row').forEach(r=>{ const c=+r.querySelector('.as-qty').value||0, b=BRACKETS[+r.querySelector('.as-sel').value].bonus; gross+=c*b; clients+=c; });
+  return {gross,clients};
+}
+function wzTotalBonus(){ const s=wzScenario(); document.getElementById('asTotal').textContent=num(s.clients); document.getElementById('asTotalBonus').textContent=money(s.gross); return s; }
+faixaRow();
+document.getElementById('asAdd').addEventListener('click',faixaRow);
+document.getElementById('tpGrid').innerHTML=BRACKETS.map(b=>`<div class="tp-cell"><div class="tc">${b.label}</div><div class="tm">${money(b.bonus)}</div></div>`).join('');
+
+/* ---------- NAV ---------- */
+function goStep(n){
+  document.querySelectorAll('.wz-pane').forEach(p=>p.classList.toggle('active',+p.dataset.pane===n));
+  document.querySelectorAll('.wz-dot').forEach(d=>{ const s=+d.dataset.step; d.classList.toggle('active',s===n); d.classList.toggle('done',s<n); });
+  document.querySelectorAll('.wz-conn').forEach(c=>c.classList.toggle('done',+c.dataset.conn<n));
+  if(n===3) wzResult();
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.go)));
+function wzResult(){
+  const {gross,clients}=wzScenario();
+  const unit=+document.getElementById('wzUnit').value||0;
+  const qty=+document.getElementById('wzQty').value||0;
+  const tax=(+document.getElementById('wzTax').value||0)/100;
+  const plat=unit*qty, imp=gross*tax, liq=gross-plat-imp;
+  document.getElementById('wzFaixa').textContent=num(clients)+' clientes';
+  document.getElementById('wzBruto').textContent=money(gross);
+  document.getElementById('wzPlat').textContent='− '+money(plat);
+  document.getElementById('wzImp').textContent='− '+money(imp);
+  document.getElementById('wzLiq').textContent=money(liq);
+}
+document.getElementById('wzReset').addEventListener('click',()=>{ asList.innerHTML=''; faixaRow(); wzTotalBonus(); goStep(1); });
+</script>
+</body>
+</html>
